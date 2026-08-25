@@ -36,7 +36,7 @@ A **direct document visit** is different. PPR can send its static App Shell HTML
 | --- | --- | --- |
 | `chrome:header` | Header component | Invalidate header |
 | `chrome:footer` | Footer component | Invalidate footer |
-| `products:top` | Top-tier source and `/api/top-products` | Invalidate top-products |
+| `products:top` | External ranking response | Invalidate top-products |
 | `product:<slug>` | One super-top or on-demand product detail | Invalidate product |
 
 The control page uses `updateTag()` in Server Actions. The next matching cached read is therefore blocking and fresh. This differs from `revalidateTag(tag, "max")`, which uses stale-while-revalidate behavior.
@@ -44,7 +44,7 @@ The control page uses `updateTag()` in Server Actions. The next matching cached 
 ## Fake endpoints and timing
 
 - External ranking API: the public [product-rankings Gist](https://gist.github.com/Strernd/0bed1c2b52eecfae6e141f8f51cf014f) is fetched through `RANKING_API_URL`. It returns `superTopSlugs` and `onDemandSlugs`.
-- `GET /api/top-products`: exposes the same cached external ranking response. `getRanking()` uses `cache: "no-store"` inside a `"use cache"` scope, refreshes through the 15-minute `rankings` profile, and has the `products:top` tag. The build path calls the shared source directly rather than HTTP-fetching its own route, so it works during `next build`. Product routes do not depend on the ranking cache, so its refresh cannot invalidate individual product routes.
+- `getRanking()`: fetches the external Gist with `cache: "no-store"` inside a `"use cache"` scope, refreshes through the 15-minute `rankings` profile, and has the `products:top` tag. The build path calls this shared source directly, so it works during `next build`. Product routes do not depend on the ranking cache, so its refresh cannot invalidate individual product routes.
 - `GET /api/products/:slug`: returns the tier and selected detail data. Cacheable detail takes 1.6 seconds on a cache fill. Long-tail detail waits 1.6 seconds on every request.
 
 Server Components call shared data functions directly. The Route Handlers exist as observable fake endpoints, not as an internal data transport.

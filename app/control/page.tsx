@@ -17,7 +17,7 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
           <form action={invalidateHeader}><button>Invalidate header</button></form>
           <form action={invalidateFooter}><button>Invalidate footer</button></form>
         </Control>
-        <Control title="Ranking endpoint" description="Invalidates the cached source behind /api/top-products and the super-top/on-demand classification.">
+        <Control title="Ranking endpoint" description="Invalidates the cached external ranking source and the super-top/on-demand classification.">
           <form action={invalidateRanking}><button>Invalidate top-products</button></form>
         </Control>
         <Control title="Individual product" description="Super-top and on-demand products own tagged detail caches. Long-tail product detail is never cached.">
@@ -37,7 +37,7 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
           <li>Directly open an on-demand product, then reload it. Its delayed detail becomes cacheable after the first request.</li>
           <li>Open a long-tail product repeatedly. Its detail remains request-time and streams after 1.6 seconds.</li>
           <li>Invalidate a tag here, then hard reload the relevant route and compare its timestamp.</li>
-          <li>Inspect <code>/api/top-products</code> or <code>/api/products/[slug]</code> for the same fake endpoint behavior.</li>
+          <li>Inspect <code>/api/products/[slug]</code> for fake product behavior, or open the public ranking Gist to inspect its external source data.</li>
         </ol>
       </section>
     </main>

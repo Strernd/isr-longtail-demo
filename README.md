@@ -24,7 +24,6 @@ The demo fetches rankings from a public [GitHub Gist](https://gist.github.com/St
 [`getRanking()`](lib/ranking.ts) fetches the Gist raw URL with `cache: "no-store"` inside a `"use cache"` function. The `rankings` cache profile owns the 15-minute refresh policy and `products:top` tag.
 
 - `generateStaticParams()` calls that shared function at build time to create the super-top prerenders.
-- [`/api/top-products`](app/api/top-products/route.ts) exposes the same cached response for inspection.
 - Product delivery tiers do **not** read the ranking cache at request time, so its refresh does not invalidate every product route.
 
 Set `RANKING_API_URL` in `.env.local`. [`.env.example`](.env.example) contains the public demo URL.
@@ -42,7 +41,7 @@ Open:
 - `/products/orbital-chair` for a super-top build prerender
 - `/products/linen-coasters` for an on-demand cacheable product
 - `/products/brass-clip` for an always-streaming long-tail product
-- `/api/top-products` and `/api/products/:slug` for fake endpoints
+- `/api/products/:slug` for the fake product endpoint
 - `/control` to invalidate header, footer, ranking, or a product tag
 
 Read [the three-tier design](docs/top-vs-long-tail-cache-demo.md) and [the direct-visit versus client-navigation research](docs/first-visit-ppr-navigation-research.md) for the exact behavior and constraints.
