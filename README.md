@@ -10,6 +10,19 @@ A Next.js 16.3 ecommerce demo for three product-delivery tiers with Cache Compon
 
 Header, footer, top-product ranking, and individual cacheable products each have cache tags. `/control` uses Server Actions with `updateTag()` to expire them.
 
+## Optional ranking endpoint
+
+Set `TOP_PRODUCTS_ENDPOINT` to use a real ranking service. Its JSON response must contain known catalog slugs:
+
+```json
+{
+  "superTopSlugs": ["orbital-chair"],
+  "onDemandSlugs": ["linen-coasters"]
+}
+```
+
+[`getTopProducts()`](lib/products.ts) caches that response for 15 minutes using the `rankings` cache profile and the `products:top` tag. It uses a `no-store` fetch inside the `"use cache"` boundary so the function's cache lifetime is the only refresh policy. The ranking supplies `generateStaticParams()` at build time and powers `/api/top-products`; changing the built super-top set requires a redeploy. Product delivery tiers intentionally remain independent, so a ranking refresh does not invalidate every product cache. Copy [`.env.example`](.env.example) to `.env.local` to configure it. Leave it unset to retain the local fake ranking.
+
 ## Run it
 
 ```bash

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { products, productTier } from "@/lib/products";
+import { catalogTier, products } from "@/lib/products";
 
 const tierCopy = {
   "super-top": "Build prerendered",
@@ -17,7 +17,7 @@ export default function Home() {
       </section>
       <section className="catalog" aria-label="Product catalog">
         {products.map((product) => {
-          const tier = productTier(product.slug)!;
+          const tier = catalogTier(product.slug)!;
           return (
             <Link
               className="product-card"

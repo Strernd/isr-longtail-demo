@@ -11,6 +11,11 @@ export type Product = {
 
 export type ProductTier = "super-top" | "on-demand" | "long-tail";
 
+type RankingResponse = {
+  superTopSlugs?: string[];
+  onDemandSlugs?: string[];
+};
+
 export const superTopProducts: Product[] = [
   { slug: "orbital-chair", name: "Orbital Chair", price: 680, description: "A sculptural lounge chair with a powder-coated steel frame.", accent: "coral" },
   { slug: "halo-lamp", name: "Halo Lamp", price: 240, description: "A dimmable opal-glass lamp for warm, low-glare light.", accent: "gold" },
@@ -41,29 +46,69 @@ export function findProduct(slug: string) {
   return products.find((product) => product.slug === slug);
 }
 
-export function productTier(slug: string): ProductTier | null {
+export function catalogTier(slug: string): ProductTier | null {
   if (superTopProducts.some((product) => product.slug === slug)) return "super-top";
   if (onDemandProducts.some((product) => product.slug === slug)) return "on-demand";
   if (longTailProducts.some((product) => product.slug === slug)) return "long-tail";
   return null;
 }
 
+function uniqueKnownSlugs(slugs: string[] | undefined) {
+  return [...new Set(slugs ?? [])].filter((slug) => Boolean(findProduct(slug)));
+}
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Shared source for server components and GET /api/top-products. */
+/**
+ * Shared source for server components and GET /api/top-products.
+ *
+ * Set TOP_PRODUCTS_ENDPOINT to JSON shaped like:
+ * { "superTopSlugs": ["orbital-chair"], "onDemandSlugs": ["linen-coasters"] }
+ *
+ * The uncached fetch is deliberately enclosed by `use cache`, so this function's
+ * `rankings` lifetime, not fetch's default cache, controls endpoint refreshes.
+ */
 export async function getTopProducts() {
   "use cache";
-  cacheLife("hours");
+  cacheLife("rankings");
   cacheTag("products:top");
 
-  await delay(650);
+  const endpoint = process.env.TOP_PRODUCTS_ENDPOINT;
+  if (!endpoint) {
+    await delay(650);
+    return {
+      superTopProducts,
+      onDemandProducts,
+      source: "local demo data" as const,
+      cacheStamp: new Date().toISOString(),
+    };
+  }
+
+  const response = await fetch(endpoint, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Top-products endpoint failed: ${response.status}`);
+
+  const ranking = (await response.json()) as RankingResponse;
+  const superTopSlugs = uniqueKnownSlugs(ranking.superTopSlugs);
+  const onDemandSlugs = uniqueKnownSlugs(ranking.onDemandSlugs).filter((slug) => !superTopSlugs.includes(slug));
+
   return {
-    superTopProducts,
-    onDemandProducts,
+    superTopProducts: superTopSlugs.map((slug) => findProduct(slug)!),
+    onDemandProducts: onDemandSlugs.map((slug) => findProduct(slug)!),
+    source: endpoint,
     cacheStamp: new Date().toISOString(),
   };
+}
+
+/**
+ * Product delivery policy deliberately does not read the live ranking cache.
+ * This keeps a 15-minute ranking refresh from becoming a dependency of every
+ * cached product route. The ranking controls the build-time super-top set;
+ * individual product cache entries remain tagged and invalidated independently.
+ */
+export function getProductTier(slug: string) {
+  return catalogTier(slug);
 }
 
 /** Used by both cacheable tiers. Super-top values fill at build; on-demand values fill after a real visit. */

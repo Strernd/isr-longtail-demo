@@ -12,7 +12,7 @@ This ecommerce demo uses one dynamic product route with three deliberately diffe
 
 ## Build prerendering
 
-`app/products/[slug]/page.tsx` exports the five `superTopProducts` slugs from `generateStaticParams()`. At build time, Next knows each slug and executes the cacheable product branch. The build output therefore contains a concrete static page for each super-top product.
+`app/products/[slug]/page.tsx` obtains the super-top slugs from the cached ranking endpoint in `generateStaticParams()`. At build time, Next knows each slug and executes the cacheable product branch. The build output therefore contains a concrete static page for each super-top product. Changing that build set later requires a redeploy.
 
 The route still keeps the `params` read inside `<Suspense>`. That produces the generic App Shell needed for URLs not in the build.
 
@@ -43,7 +43,7 @@ The control page uses `updateTag()` in Server Actions. The next matching cached 
 
 ## Fake endpoints and timing
 
-- `GET /api/top-products`: exposes the cached super-top and on-demand ranking source. Its cache fill takes 650 ms.
+- `GET /api/top-products`: exposes the cached super-top and on-demand ranking source. Configure `TOP_PRODUCTS_ENDPOINT` to fetch `{ "superTopSlugs": string[], "onDemandSlugs": string[] }` from a real service. The `rankings` cache profile refreshes it every 15 minutes and tags it `products:top`. The live ranking is not read in the product page, so its refresh cannot invalidate individual product routes. With no endpoint configured, the demo uses a 650 ms local fake source.
 - `GET /api/products/:slug`: returns the tier and selected detail data. Cacheable detail takes 1.6 seconds on a cache fill. Long-tail detail waits 1.6 seconds on every request.
 
 Server Components call shared data functions directly. The Route Handlers exist as observable fake endpoints, not as an internal data transport.

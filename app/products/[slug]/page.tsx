@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { findProduct, getCachedProduct, getFreshLongTailProduct, productTier, superTopProducts, type Product, type ProductTier } from "@/lib/products";
+import { findProduct, getCachedProduct, getFreshLongTailProduct, getProductTier, getTopProducts, type Product, type ProductTier } from "@/lib/products";
 
-export function generateStaticParams() {
-  // These five concrete URLs and their cached product data are built ahead of deployment.
-  return superTopProducts.map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  // The endpoint is consulted at build time. A later ranking change needs a new deploy
+  // to alter the super-top build prerender set.
+  const ranking = await getTopProducts();
+  return ranking.superTopProducts.map((product) => ({ slug: product.slug }));
 }
 
 export default function ProductPage(props: PageProps<"/products/[slug]">) {
@@ -20,8 +22,9 @@ export default function ProductPage(props: PageProps<"/products/[slug]">) {
 
 async function ProductRoute({ params }: Pick<PageProps<"/products/[slug]">, "params">) {
   const { slug } = await params;
-  const tier = productTier(slug);
-  if (!tier || !findProduct(slug)) notFound();
+  if (!findProduct(slug)) notFound();
+  const tier = getProductTier(slug);
+  if (!tier) notFound();
 
   return tier === "long-tail" ? (
     <StreamedLongTailDetail slug={slug} tier={tier} />
