@@ -1,5 +1,12 @@
-import { getTopProducts } from "@/lib/products";
+import { getRanking } from "@/lib/ranking";
+import { findProduct } from "@/lib/products";
 
 export async function GET() {
-  return Response.json(await getTopProducts());
+  const ranking = await getRanking();
+
+  return Response.json({
+    ...ranking,
+    superTopProducts: ranking.superTopSlugs.map(findProduct).filter(Boolean),
+    onDemandProducts: ranking.onDemandSlugs.map(findProduct).filter(Boolean),
+  });
 }

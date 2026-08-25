@@ -11,11 +11,6 @@ export type Product = {
 
 export type ProductTier = "super-top" | "on-demand" | "long-tail";
 
-type RankingResponse = {
-  superTopSlugs?: string[];
-  onDemandSlugs?: string[];
-};
-
 export const superTopProducts: Product[] = [
   { slug: "orbital-chair", name: "Orbital Chair", price: 680, description: "A sculptural lounge chair with a powder-coated steel frame.", accent: "coral" },
   { slug: "halo-lamp", name: "Halo Lamp", price: 240, description: "A dimmable opal-glass lamp for warm, low-glare light.", accent: "gold" },
@@ -53,56 +48,12 @@ export function catalogTier(slug: string): ProductTier | null {
   return null;
 }
 
-function uniqueKnownSlugs(slugs: string[] | undefined) {
-  return [...new Set(slugs ?? [])].filter((slug) => Boolean(findProduct(slug)));
-}
-
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Shared source for server components and GET /api/top-products.
- *
- * Set TOP_PRODUCTS_ENDPOINT to JSON shaped like:
- * { "superTopSlugs": ["orbital-chair"], "onDemandSlugs": ["linen-coasters"] }
- *
- * The uncached fetch is deliberately enclosed by `use cache`, so this function's
- * `rankings` lifetime, not fetch's default cache, controls endpoint refreshes.
- */
-export async function getTopProducts() {
-  "use cache";
-  cacheLife("rankings");
-  cacheTag("products:top");
-
-  const endpoint = process.env.TOP_PRODUCTS_ENDPOINT;
-  if (!endpoint) {
-    await delay(650);
-    return {
-      superTopProducts,
-      onDemandProducts,
-      source: "local demo data" as const,
-      cacheStamp: new Date().toISOString(),
-    };
-  }
-
-  const response = await fetch(endpoint, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Top-products endpoint failed: ${response.status}`);
-
-  const ranking = (await response.json()) as RankingResponse;
-  const superTopSlugs = uniqueKnownSlugs(ranking.superTopSlugs);
-  const onDemandSlugs = uniqueKnownSlugs(ranking.onDemandSlugs).filter((slug) => !superTopSlugs.includes(slug));
-
-  return {
-    superTopProducts: superTopSlugs.map((slug) => findProduct(slug)!),
-    onDemandProducts: onDemandSlugs.map((slug) => findProduct(slug)!),
-    source: endpoint,
-    cacheStamp: new Date().toISOString(),
-  };
-}
-
-/**
- * Product delivery policy deliberately does not read the live ranking cache.
+ * Product delivery policy deliberately does not read the external ranking cache.
  * This keeps a 15-minute ranking refresh from becoming a dependency of every
  * cached product route. The ranking controls the build-time super-top set;
  * individual product cache entries remain tagged and invalidated independently.

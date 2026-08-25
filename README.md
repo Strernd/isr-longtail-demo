@@ -8,11 +8,11 @@ A Next.js 16.3 ecommerce demo for three product-delivery tiers with Cache Compon
 | On-demand | 5 | Cacheable after the first real request. Catalog links do not speculatively prefetch them. |
 | Long-tail | 5 | Product data remains request-time and streams on every request. |
 
-Header, footer, top-product ranking, and individual cacheable products each have cache tags. `/control` uses Server Actions with `updateTag()` to expire them.
+Header, footer, product-ranking data, and individual cacheable products each have cache tags. `/control` uses Server Actions with `updateTag()` to expire them.
 
-## Optional ranking endpoint
+## External ranking API
 
-Set `TOP_PRODUCTS_ENDPOINT` to use a real ranking service. Its JSON response must contain known catalog slugs:
+The demo fetches rankings from a public [GitHub Gist](https://gist.github.com/Strernd/0bed1c2b52eecfae6e141f8f51cf014f), intentionally acting as a tiny external JSON service:
 
 ```json
 {
@@ -21,7 +21,13 @@ Set `TOP_PRODUCTS_ENDPOINT` to use a real ranking service. Its JSON response mus
 }
 ```
 
-[`getTopProducts()`](lib/products.ts) caches that response for 15 minutes using the `rankings` cache profile and the `products:top` tag. It uses a `no-store` fetch inside the `"use cache"` boundary so the function's cache lifetime is the only refresh policy. The ranking supplies `generateStaticParams()` at build time and powers `/api/top-products`; changing the built super-top set requires a redeploy. Product delivery tiers intentionally remain independent, so a ranking refresh does not invalidate every product cache. Copy [`.env.example`](.env.example) to `.env.local` to configure it. Leave it unset to retain the local fake ranking.
+[`getRanking()`](lib/ranking.ts) fetches the Gist raw URL with `cache: "no-store"` inside a `"use cache"` function. The `rankings` cache profile owns the 15-minute refresh policy and `products:top` tag.
+
+- `generateStaticParams()` calls that shared function at build time to create the super-top prerenders.
+- [`/api/top-products`](app/api/top-products/route.ts) exposes the same cached response for inspection.
+- Product delivery tiers do **not** read the ranking cache at request time, so its refresh does not invalidate every product route.
+
+Set `RANKING_API_URL` in `.env.local`. [`.env.example`](.env.example) contains the public demo URL.
 
 ## Run it
 

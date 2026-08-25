@@ -1,12 +1,13 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { findProduct, getCachedProduct, getFreshLongTailProduct, getProductTier, getTopProducts, type Product, type ProductTier } from "@/lib/products";
+import { getRanking } from "@/lib/ranking";
+import { findProduct, getCachedProduct, getFreshLongTailProduct, getProductTier, type Product, type ProductTier } from "@/lib/products";
 
 export async function generateStaticParams() {
   // The endpoint is consulted at build time. A later ranking change needs a new deploy
   // to alter the super-top build prerender set.
-  const ranking = await getTopProducts();
-  return ranking.superTopProducts.map((product) => ({ slug: product.slug }));
+  const ranking = await getRanking();
+  return ranking.superTopSlugs.filter((slug) => Boolean(findProduct(slug))).map((slug) => ({ slug }));
 }
 
 export default function ProductPage(props: PageProps<"/products/[slug]">) {

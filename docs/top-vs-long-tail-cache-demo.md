@@ -12,7 +12,7 @@ This ecommerce demo uses one dynamic product route with three deliberately diffe
 
 ## Build prerendering
 
-`app/products/[slug]/page.tsx` obtains the super-top slugs from the cached ranking endpoint in `generateStaticParams()`. At build time, Next knows each slug and executes the cacheable product branch. The build output therefore contains a concrete static page for each super-top product. Changing that build set later requires a redeploy.
+`app/products/[slug]/page.tsx` obtains the super-top slugs from [`getRanking()`](../lib/ranking.ts) in `generateStaticParams()`. That function fetches the public Gist ranking API with a 15-minute tagged cache lifetime. At build time, Next knows each returned slug and executes the cacheable product branch. The build output therefore contains a concrete static page for each super-top product. Changing that build set later requires a redeploy.
 
 The route still keeps the `params` read inside `<Suspense>`. That produces the generic App Shell needed for URLs not in the build.
 
@@ -43,7 +43,8 @@ The control page uses `updateTag()` in Server Actions. The next matching cached 
 
 ## Fake endpoints and timing
 
-- `GET /api/top-products`: exposes the cached super-top and on-demand ranking source. Configure `TOP_PRODUCTS_ENDPOINT` to fetch `{ "superTopSlugs": string[], "onDemandSlugs": string[] }` from a real service. The `rankings` cache profile refreshes it every 15 minutes and tags it `products:top`. The live ranking is not read in the product page, so its refresh cannot invalidate individual product routes. With no endpoint configured, the demo uses a 650 ms local fake source.
+- External ranking API: the public [product-rankings Gist](https://gist.github.com/Strernd/0bed1c2b52eecfae6e141f8f51cf014f) is fetched through `RANKING_API_URL`. It returns `superTopSlugs` and `onDemandSlugs`.
+- `GET /api/top-products`: exposes the same cached external ranking response. `getRanking()` uses `cache: "no-store"` inside a `"use cache"` scope, refreshes through the 15-minute `rankings` profile, and has the `products:top` tag. The build path calls the shared source directly rather than HTTP-fetching its own route, so it works during `next build`. Product routes do not depend on the ranking cache, so its refresh cannot invalidate individual product routes.
 - `GET /api/products/:slug`: returns the tier and selected detail data. Cacheable detail takes 1.6 seconds on a cache fill. Long-tail detail waits 1.6 seconds on every request.
 
 Server Components call shared data functions directly. The Route Handlers exist as observable fake endpoints, not as an internal data transport.
