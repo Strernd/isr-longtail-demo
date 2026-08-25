@@ -32,3 +32,12 @@ export async function getRanking() {
     cacheStamp: new Date().toISOString(),
   };
 }
+
+/** The ranking decides delivery policy at request/render time. */
+export async function getRankedProductTier(slug: string) {
+  const ranking = await getRanking();
+
+  if (ranking.superTopSlugs.includes(slug)) return "super-top" as const;
+  if (ranking.onDemandSlugs.includes(slug)) return "on-demand" as const;
+  return "long-tail" as const;
+}

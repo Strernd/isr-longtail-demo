@@ -24,7 +24,7 @@ The demo fetches rankings from a public [GitHub Gist](https://gist.github.com/St
 [`getRanking()`](lib/ranking.ts) fetches the Gist raw URL with `cache: "no-store"` inside a `"use cache"` function. The `rankings` cache profile owns the 15-minute refresh policy and `products:top` tag.
 
 - `generateStaticParams()` calls that shared function at build time to create the super-top prerenders.
-- Product delivery tiers do **not** read the ranking cache at request time, so its refresh does not invalidate every product route.
+- Product routes read the ranking cache at request time to choose super-top, on-demand, or long-tail behavior. Invalidating `products:top` lets the next product request re-evaluate that choice. Individual `product:<slug>` entries remain separately cached and tagged.
 
 Set `RANKING_API_URL` in `.env.local`. [`.env.example`](.env.example) contains the public demo URL.
 

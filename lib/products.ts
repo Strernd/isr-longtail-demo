@@ -52,16 +52,6 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Product delivery policy deliberately does not read the external ranking cache.
- * This keeps a 15-minute ranking refresh from becoming a dependency of every
- * cached product route. The ranking controls the build-time super-top set;
- * individual product cache entries remain tagged and invalidated independently.
- */
-export function getProductTier(slug: string) {
-  return catalogTier(slug);
-}
-
 /** Used by both cacheable tiers. Super-top values fill at build; on-demand values fill after a real visit. */
 export async function getCachedProduct(slug: string) {
   "use cache";

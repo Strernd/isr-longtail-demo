@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getRanking } from "@/lib/ranking";
-import { findProduct, getCachedProduct, getFreshLongTailProduct, getProductTier, type Product, type ProductTier } from "@/lib/products";
+import { getRankedProductTier, getRanking } from "@/lib/ranking";
+import { findProduct, getCachedProduct, getFreshLongTailProduct, type Product, type ProductTier } from "@/lib/products";
 
 export async function generateStaticParams() {
   // The endpoint is consulted at build time. A later ranking change needs a new deploy
@@ -24,8 +24,7 @@ export default function ProductPage(props: PageProps<"/products/[slug]">) {
 async function ProductRoute({ params }: Pick<PageProps<"/products/[slug]">, "params">) {
   const { slug } = await params;
   if (!findProduct(slug)) notFound();
-  const tier = getProductTier(slug);
-  if (!tier) notFound();
+  const tier = await getRankedProductTier(slug);
 
   return tier === "long-tail" ? (
     <StreamedLongTailDetail slug={slug} tier={tier} />

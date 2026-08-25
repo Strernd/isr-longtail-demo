@@ -18,9 +18,9 @@ The route still keeps the `params` read inside `<Suspense>`. That produces the g
 
 ## On-demand and long-tail behavior
 
-The second tier uses `getCachedProduct(slug)`, a `"use cache"` function tagged `product:<slug>`. A direct request to an omitted slug receives PPR’s generic document shell, then Next upgrades that concrete URL in the background. A later request can use its cached concrete output.
+The second tier uses `getCachedProduct(slug)`, a `"use cache"` function tagged `product:<slug>`. The product route resolves the active tier from the 15-minute external ranking cache. A direct request to an omitted slug receives PPR’s generic document shell, then Next upgrades that concrete URL in the background. A later request can use its cached concrete output.
 
-The third tier calls `getFreshLongTailProduct(slug)`, which calls `connection()` and has no cache directive. It always remains behind the Suspense fallback. Next may retain a route artifact with that fallback, but it cannot produce a fully cached product page.
+The third tier calls `getFreshLongTailProduct(slug)`, which calls `connection()` and has no cache directive. It always remains behind the Suspense fallback. Next may retain a route artifact with that fallback, but it cannot produce a fully cached product page. Moving a slug into `onDemandSlugs`, then invalidating `products:top`, makes its next route render use the cacheable second tier.
 
 ## Why the on-demand cards disable prefetch
 
@@ -44,7 +44,7 @@ The control page uses `updateTag()` in Server Actions. The next matching cached 
 ## Fake endpoints and timing
 
 - External ranking API: the public [product-rankings Gist](https://gist.github.com/Strernd/0bed1c2b52eecfae6e141f8f51cf014f) is fetched through `RANKING_API_URL`. It returns `superTopSlugs` and `onDemandSlugs`.
-- `getRanking()`: fetches the external Gist with `cache: "no-store"` inside a `"use cache"` scope, refreshes through the 15-minute `rankings` profile, and has the `products:top` tag. The build path calls this shared source directly, so it works during `next build`. Product routes do not depend on the ranking cache, so its refresh cannot invalidate individual product routes.
+- `getRanking()`: fetches the external Gist with `cache: "no-store"` inside a `"use cache"` scope, refreshes through the 15-minute `rankings` profile, and has the `products:top` tag. The build path calls this shared source directly, so it works during `next build`. Product routes depend on this tag to choose their current delivery tier; individual `product:<slug>` cache data remains separately tagged and is not itself invalidated by a ranking refresh.
 - `GET /api/products/:slug`: returns the tier and selected detail data. Cacheable detail takes 1.6 seconds on a cache fill. Long-tail detail waits 1.6 seconds on every request.
 
 Server Components call shared data functions directly. The Route Handlers exist as observable fake endpoints, not as an internal data transport.
