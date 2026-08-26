@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 
 export async function Header() {
   "use cache";
-  cacheLife("hours");
+  cacheLife("forever");
   cacheTag("chrome:header");
   const cacheStamp = new Date().toISOString();
 
@@ -21,7 +21,7 @@ export async function Header() {
 
 export async function Footer() {
   "use cache";
-  cacheLife("hours");
+  cacheLife("forever");
   cacheTag("chrome:footer");
   const cacheStamp = new Date().toISOString();
 

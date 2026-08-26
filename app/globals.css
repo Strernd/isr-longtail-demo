@@ -27,7 +27,7 @@ h2 { letter-spacing: -.04em; }
 .detail-swatch { width: min(36vw, 410px); aspect-ratio: 1; }
 .coral { background: #f2735c; } .gold { background: #dbb45c; } .blue { background: #6eabc5; } .green { background: #92ad71; } .purple { background: #aa8cb2; } .rose { background: #df9ca0; } .cyan { background: #82bebc; } .orange { background: #df8b51; } .yellow { background: #dccb71; } .slate { background: #8998a3; }
 .badge { display: inline-block; margin: 14px 0 0; padding: 4px 7px; border-radius: 99px; font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.super-top { color: #813015; background: #ffd8c9; } .on-demand { color: #735210; background: #f9e6a8; } .long-tail { color: #315367; background: #cce6ee; }
+.build { color: #813015; background: #ffd8c9; } .upgrade { color: #735210; background: #f9e6a8; } .long-tail { color: #315367; background: #cce6ee; }
 .note, .how-it-works { margin-top: 35px; padding: 18px 20px; border-left: 4px solid var(--orange); background: #eee8dd; color: #49555a; line-height: 1.5; }
 .product-page { min-height: 620px; }
 .route-status { display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
@@ -50,6 +50,10 @@ code { padding: 4px 6px; background: #e7e0d5; color: #576269; font-family: var(-
 button, select { border: 1px solid var(--ink); padding: 10px 12px; background: var(--ink); color: white; font: 600 12px var(--font-geist-mono), monospace; cursor: pointer; }
 button:hover { background: var(--orange); border-color: var(--orange); }
 .product-invalidator { display: grid; gap: 8px; width: 100%; font-size: 12px; font-family: var(--font-geist-mono), monospace; }
+.upgrade-list { width: 100%; display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.upgrade-list form { width: 100%; }
+.upgrade-toggle { width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 8px; background: transparent; color: var(--ink); }
+.upgrade-toggle.is-upgraded { background: var(--ink); color: white; }
 select { background: white; color: var(--ink); }
 .flash { margin-top: 20px; padding: 12px; background: #d9ecdb; color: #285336; font-family: var(--font-geist-mono), monospace; font-size: 13px; }
 .how-it-works { margin-top: 24px; border-left: none; border-top: 4px solid var(--orange); }

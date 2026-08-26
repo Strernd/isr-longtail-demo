@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { catalogTier, products } from "@/lib/products";
+import { products } from "@/lib/products";
+import { getCachedTierAssignments } from "@/lib/tiers";
 
 const tierCopy = {
-  "super-top": "Build prerendered",
-  "on-demand": "Cache on real visit",
+  build: "Build prerendered",
+  upgrade: "Cached on visit",
   "long-tail": "Always streams",
 };
 
-export default function Home() {
+export default async function Home() {
+  const tiers = await getCachedTierAssignments();
   return (
     <main className="page-shell">
       <section className="hero">
@@ -17,13 +19,13 @@ export default function Home() {
       </section>
       <section className="catalog" aria-label="Product catalog">
         {products.map((product) => {
-          const tier = catalogTier(product.slug)!;
+          const tier = tiers.get(product.slug) ?? "long-tail";
           return (
             <Link
               className="product-card"
               href={`/products/${product.slug}`}
               key={product.slug}
-              prefetch={tier === "super-top" ? true : false}
+              prefetch={tier === "build" ? true : false}
             >
               <div className={`swatch ${product.accent}`} />
               <p className={`badge ${tier}`}>{tierCopy[tier]}</p>
@@ -35,7 +37,7 @@ export default function Home() {
         })}
       </section>
       <aside className="note">
-        <strong>Demo behavior:</strong> super-top cards runtime-prefetch because they were already built. On-demand and long-tail cards disable speculative prefetching, so only a real request can warm an on-demand product. Direct visits to either still receive the PPR document shell while product data resolves.
+        <strong>Demo behavior:</strong> build cards runtime-prefetch because they were already built. Upgrade and long-tail cards disable speculative prefetching, so only a real request can warm an upgrade product. Direct visits to either still receive the PPR document shell while product data resolves.
       </aside>
     </main>
   );

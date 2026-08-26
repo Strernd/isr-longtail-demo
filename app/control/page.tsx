@@ -1,11 +1,13 @@
-import { products } from "@/lib/products";
-import { invalidateFooter, invalidateHeader, invalidateProduct, invalidateRanking } from "./actions";
+import { longTailProducts, products } from "@/lib/products";
+import { getTierAssignments } from "@/lib/tiers";
+import { invalidateFooter, invalidateHeader, invalidateProduct, toggleUpgrade } from "./actions";
 
 // The confirmation is URL-specific. This admin-only demo page is intentionally blocking.
 export const instant = false;
 
 export default async function ControlPage({ searchParams }: PageProps<"/control">) {
   const message = (await searchParams).message;
+  const assignments = await getTierAssignments();
   return (
     <main className="page-shell control-page">
       <p className="eyebrow">Cache controls</p>
@@ -17,10 +19,26 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
           <form action={invalidateHeader}><button>Invalidate header</button></form>
           <form action={invalidateFooter}><button>Invalidate footer</button></form>
         </Control>
-        <Control title="Ranking endpoint" description="Invalidates the cached external ranking source and the super-top/on-demand classification.">
-          <form action={invalidateRanking}><button>Invalidate top-products</button></form>
+        <Control title="KV upgrade set" description="The five long-tail products stream by default. Check one to upgrade it: its very next visit fills a permanent cache. Uncheck to send it back to streaming. Every other product stays untouched.">
+          <ul className="upgrade-list">
+            {longTailProducts.map((product) => {
+              const isUpgraded = assignments.get(product.slug) === "upgrade";
+              return (
+                <li key={product.slug}>
+                  <form action={toggleUpgrade}>
+                    <input type="hidden" name="slug" value={product.slug} />
+                    <input type="hidden" name="upgraded" value={isUpgraded ? "0" : "1"} />
+                    <button className={`upgrade-toggle${isUpgraded ? " is-upgraded" : ""}`}>
+                      <span aria-hidden>{isUpgraded ? "\u2611" : "\u2610"}</span>
+                      <span>{product.name}</span>
+                    </button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
         </Control>
-        <Control title="Individual product" description="Super-top and on-demand products own tagged detail caches. Long-tail product detail is never cached.">
+        <Control title="Individual product" description="Build and upgrade products own tagged detail caches. Long-tail product detail is never cached.">
           <form action={invalidateProduct} className="product-invalidator">
             <label htmlFor="slug">Product</label>
             <select id="slug" name="slug" defaultValue={products[0].slug}>
@@ -33,11 +51,12 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
       <section className="how-it-works">
         <h2>Test sequence</h2>
         <ol>
-          <li>Open a super-top product. It was prerendered at build time.</li>
-          <li>Directly open an on-demand product, then reload it. Its delayed detail becomes cacheable after the first request.</li>
+          <li>Open a build product. It was prerendered at build time.</li>
+          <li>Directly open an upgrade product, then reload it. Its delayed detail becomes cacheable after the first request.</li>
           <li>Open a long-tail product repeatedly. Its detail remains request-time and streams after 1.6 seconds.</li>
           <li>Invalidate a tag here, then hard reload the relevant route and compare its timestamp.</li>
-          <li>Inspect <code>/api/products/[slug]</code> for fake product behavior, or open the public ranking Gist to inspect its external source data.</li>
+          <li>Check a long-tail product in the KV upgrade set, then open it: it becomes permanently cached on its next visit while every other product keeps its original cache timestamp.</li>
+          <li>Inspect <code>/api/products/[slug]</code> for fake product behavior. The upgrade set lives in Vercel KV (Upstash).</li>
         </ol>
       </section>
     </main>

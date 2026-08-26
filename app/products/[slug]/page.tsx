@@ -1,13 +1,18 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getRankedProductTier, getRanking } from "@/lib/ranking";
+import { getProductTier, getTierAssignments } from "@/lib/tiers";
 import { findProduct, getCachedProduct, getFreshLongTailProduct, type Product, type ProductTier } from "@/lib/products";
 
 export async function generateStaticParams() {
-  // The endpoint is consulted at build time. A later ranking change needs a new deploy
-  // to alter the super-top build prerender set.
-  const ranking = await getRanking();
-  return ranking.superTopSlugs.filter((slug) => Boolean(findProduct(slug))).map((slug) => ({ slug }));
+  // KV is consulted at build time to pick the build-prerendered set. Later
+  // tier changes need no deploy: toggling the KV assignment on /control
+  // expires that product's tier tag, and its next request adopts the new
+  // delivery policy (cacheable verdicts refill forever-cached artifacts,
+  // long-tail verdicts are never persisted).
+  const assignments = await getTierAssignments();
+  return [...assignments.entries()]
+    .filter(([slug, tier]) => tier === "build" && Boolean(findProduct(slug)))
+    .map(([slug]) => ({ slug }));
 }
 
 export default function ProductPage(props: PageProps<"/products/[slug]">) {
@@ -24,7 +29,7 @@ export default function ProductPage(props: PageProps<"/products/[slug]">) {
 async function ProductRoute({ params }: Pick<PageProps<"/products/[slug]">, "params">) {
   const { slug } = await params;
   if (!findProduct(slug)) notFound();
-  const tier = await getRankedProductTier(slug);
+  const tier = await getProductTier(slug);
 
   return tier === "long-tail" ? (
     <StreamedLongTailDetail slug={slug} tier={tier} />
@@ -33,14 +38,14 @@ async function ProductRoute({ params }: Pick<PageProps<"/products/[slug]">, "par
   );
 }
 
-async function CachedDetail({ slug, tier }: { slug: string; tier: "super-top" | "on-demand" }) {
+async function CachedDetail({ slug, tier }: { slug: string; tier: "build" | "upgrade" }) {
   const result = await getCachedProduct(slug);
   if (!result) notFound();
 
   return (
     <>
       <TierStatus tier={tier} stamp={`product cache: ${result.cacheStamp}`} />
-      <ProductDetail product={result.product} mode={tier === "super-top" ? "Build-prerendered product" : "On-demand cached product"} stamp={`product cache: ${result.cacheStamp}`} />
+      <ProductDetail product={result.product} mode={tier === "build" ? "Build-prerendered product" : "Cached-on-visit product"} stamp={`product cache: ${result.cacheStamp}`} />
     </>
   );
 }
@@ -59,8 +64,8 @@ async function StreamedLongTailDetail({ slug, tier }: { slug: string; tier: "lon
 
 function TierStatus({ tier, stamp }: { tier: ProductTier; stamp: string }) {
   const labels = {
-    "super-top": "Build prerendered",
-    "on-demand": "Cache on real visit",
+    build: "Build prerendered",
+    upgrade: "Cached on visit",
     "long-tail": "Always streams",
   };
 
