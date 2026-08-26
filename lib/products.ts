@@ -1,4 +1,6 @@
+import { Redis } from "@upstash/redis";
 import { cacheLife, cacheTag } from "next/cache";
+import catalog from "./products.json";
 import { connection } from "next/server";
 
 export type Product = {
@@ -9,61 +11,107 @@ export type Product = {
   accent: string;
 };
 
-export type ProductTier = "build" | "upgrade" | "long-tail";
+export type ProductDelivery = "build" | "upgrade" | "long-tail";
 
-export const buildProducts: Product[] = [
-  { slug: "orbital-chair", name: "Orbital Chair", price: 680, description: "A sculptural lounge chair with a powder-coated steel frame.", accent: "coral" },
-  { slug: "halo-lamp", name: "Halo Lamp", price: 240, description: "A dimmable opal-glass lamp for warm, low-glare light.", accent: "gold" },
-  { slug: "grid-shelf", name: "Grid Shelf", price: 420, description: "A modular aluminum shelf built to move with your space.", accent: "blue" },
-  { slug: "arch-desk", name: "Arch Desk", price: 890, description: "A compact solid-oak desk with cable management underneath.", accent: "green" },
-  { slug: "loft-speaker", name: "Loft Speaker", price: 360, description: "A tactile desktop speaker tuned for focused work.", accent: "purple" },
-];
+type CacheableProductDelivery = Exclude<ProductDelivery, "long-tail">;
 
-export const upgradeProducts: Product[] = [
-  { slug: "linen-coasters", name: "Linen Coasters", price: 28, description: "A set of four hand-woven coasters.", accent: "rose" },
-  { slug: "mini-vase", name: "Mini Vase", price: 44, description: "A small recycled-glass vase for a single stem.", accent: "cyan" },
-  { slug: "copper-hooks", name: "Copper Hooks", price: 52, description: "Three small wall hooks with a living finish.", accent: "orange" },
-  { slug: "paper-tray", name: "Paper Tray", price: 38, description: "A powder-coated tray for notes, mail, and receipts.", accent: "yellow" },
-  { slug: "wool-mat", name: "Wool Desk Mat", price: 72, description: "A soft felt work surface cut from dense merino wool.", accent: "slate" },
-];
+export const PRODUCT_DELIVERY_LABELS: Record<ProductDelivery, string> = {
+  build: "Build prerendered",
+  upgrade: "Cached on visit",
+  "long-tail": "Always streams",
+};
 
-export const longTailProducts: Product[] = [
-  { slug: "brass-clip", name: "Brass Paper Clip", price: 18, description: "A satisfyingly weighty clip machined from brass.", accent: "gold" },
-  { slug: "cork-trivet", name: "Cork Trivet", price: 32, description: "A heat-proof cork rest for the centre of the table.", accent: "orange" },
-  { slug: "glass-cup", name: "Ripple Glass Cup", price: 26, description: "A hand-blown daily glass with a gently rippled profile.", accent: "cyan" },
-  { slug: "ink-pad", name: "Indigo Ink Pad", price: 24, description: "A small archival ink pad for stamps and labels.", accent: "blue" },
-  { slug: "walnut-block", name: "Walnut Monitor Block", price: 96, description: "A low riser carved from a single piece of walnut.", accent: "green" },
-];
+export const products: Product[] = catalog;
 
-export const products = [...buildProducts, ...upgradeProducts, ...longTailProducts];
+/** Products whose delivery mode the control page lets you change. */
+export const deliveryControlProducts = products.slice(10);
 
 export function findProduct(slug: string) {
   return products.find((product) => product.slug === slug);
 }
 
-function delay(ms: number) {
+const PRODUCT_DELIVERIES_KEY = "product-tiers";
+const redis = Redis.fromEnv();
+
+async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Used by both cacheable tiers. Build values fill at build; upgrade values fill after a real visit. */
-export async function getCachedProduct(slug: string) {
+/** Uncached Redis read for builds, Server Actions, and dynamic renders. */
+export async function readProductDeliveries() {
+  const values = await redis.hgetall<Record<string, string>>(PRODUCT_DELIVERIES_KEY);
+  const deliveries = new Map<string, CacheableProductDelivery>();
+
+  for (const [slug, delivery] of Object.entries(values ?? {})) {
+    if (delivery === "build" || delivery === "upgrade") {
+      deliveries.set(slug, delivery);
+    }
+  }
+
+  return deliveries;
+}
+
+export async function getBuildProductSlugs() {
+  const deliveries = await readProductDeliveries();
+  return [...deliveries.entries()]
+    .filter(([slug, delivery]) => delivery === "build" && findProduct(slug) !== undefined)
+    .map(([slug]) => ({ slug }));
+}
+
+/** Cached delivery modes for catalog badges and prefetch behavior. */
+export async function getCatalogProductDeliveries() {
+  "use cache";
+  cacheLife("forever");
+  cacheTag("product-deliveries");
+  return readProductDeliveries();
+}
+
+/** Sets a product's delivery mode, or returns it to request-time streaming. */
+export async function setProductDelivery(slug: string, delivery: CacheableProductDelivery | null) {
+  if (delivery === null) {
+    await redis.hdel(PRODUCT_DELIVERIES_KEY, slug);
+  } else {
+    await redis.hset(PRODUCT_DELIVERIES_KEY, { [slug]: delivery });
+  }
+}
+
+export async function getProduct(slug: string) {
+  const delivery = await getProductDelivery(slug);
+  const detail = delivery === "long-tail"
+    ? await getFreshProduct(slug)
+    : await getCachedProduct(slug);
+
+  return detail && { ...detail, delivery };
+}
+
+/** Cached delivery settings persist. Long-tail is checked on every request. */
+async function getProductDelivery(slug: string): Promise<ProductDelivery> {
+  "use cache";
+  cacheTag(`product-delivery:${slug}`);
+
+  const assignedDelivery = await redis.hget<string>(PRODUCT_DELIVERIES_KEY, slug);
+  if (assignedDelivery === "build" || assignedDelivery === "upgrade") {
+    cacheLife("forever");
+    return assignedDelivery;
+  }
+
+  cacheLife({ revalidate: 0 });
+  return "long-tail";
+}
+
+async function getCachedProduct(slug: string) {
   "use cache";
   cacheLife("forever");
   cacheTag(`product:${slug}`);
 
   await delay(1_600);
   const product = findProduct(slug);
-  if (!product) return null;
-
-  return { product, cacheStamp: new Date().toISOString() };
+  return product && { product, stamp: `product cache: ${new Date().toISOString()}` };
 }
 
-/** Deliberately request-time. This branch can never become fully cached product content. */
-export async function getFreshLongTailProduct(slug: string) {
+async function getFreshProduct(slug: string) {
   await connection();
   await delay(1_600);
   const product = findProduct(slug);
-  if (!product) return null;
-
-  return { product, requestStamp: new Date().toISOString() };
+  return product && { product, stamp: `fresh request: ${new Date().toISOString()}` };
 }

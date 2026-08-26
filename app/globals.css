@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 :root { --ink: #17232e; --paper: #f5f1e8; --line: #d5cdbf; --muted: #69747c; --orange: #ff5b32; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
@@ -34,13 +32,18 @@ h2 { letter-spacing: -.04em; }
 .route-status .badge { margin: 0; }
 .product-detail, .product-skeleton { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(300px, 1.1fr); gap: clamp(28px, 6vw, 80px); align-items: center; padding: 32px 0; }
 .product-detail h1 { font-size: clamp(45px, 6vw, 75px); }
-.product-detail .mode { color: var(--orange); font-family: var(--font-geist-mono), monospace; font-size: 13px; font-weight: 700; text-transform: uppercase; }
 .price { font-family: var(--font-geist-mono), monospace; font-size: 20px; }
 .description { max-width: 400px; color: #47545a; font-size: 18px; line-height: 1.5; }
 code { padding: 4px 6px; background: #e7e0d5; color: #576269; font-family: var(--font-geist-mono), monospace; font-size: 11px; overflow-wrap: anywhere; }
-.product-skeleton > div:first-child { aspect-ratio: 1; background: #dfd8cd; animation: pulse 1s ease-in-out infinite alternate; }
-.product-skeleton h1 { font-size: clamp(45px, 6vw, 75px); color: #a49c90; }
-.product-skeleton span { display: block; width: 70%; height: 18px; background: #dfd8cd; animation: pulse 1s ease-in-out infinite alternate; }
+.loading-block { display: block; background: #dfd8cd; animation: pulse 1s ease-in-out infinite alternate; }
+.product-skeleton-status { min-height: 20px; }
+.loading-badge { width: 104px; height: 20px; border-radius: 99px; }
+.loading-status { width: 190px; height: 13px; }
+.product-skeleton .detail-swatch { background: #dfd8cd; }
+.product-skeleton h1 { font-size: clamp(45px, 6vw, 75px); }
+.loading-title { width: min(100%, 500px); height: .94em; }
+.loading-price { width: 72px; height: 24px; }
+.loading-description { width: min(100%, 400px); height: 54px; }
 @keyframes pulse { to { opacity: .45; } }
 .control-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
 .control-card { min-height: 250px; padding: 22px; border: 1px solid var(--line); background: #faf8f3; }

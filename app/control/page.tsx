@@ -1,13 +1,12 @@
-import { longTailProducts, products } from "@/lib/products";
-import { getTierAssignments } from "@/lib/tiers";
-import { invalidateFooter, invalidateHeader, invalidateProduct, toggleUpgrade } from "./actions";
+import { deliveryControlProducts, products, readProductDeliveries } from "@/lib/products";
+import { invalidateFooter, invalidateHeader, invalidateProduct, toggleProductDelivery } from "./actions";
 
 // The confirmation is URL-specific. This admin-only demo page is intentionally blocking.
 export const instant = false;
 
 export default async function ControlPage({ searchParams }: PageProps<"/control">) {
   const message = (await searchParams).message;
-  const assignments = await getTierAssignments();
+  const deliveries = await readProductDeliveries();
   return (
     <main className="page-shell control-page">
       <p className="eyebrow">Cache controls</p>
@@ -19,17 +18,16 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
           <form action={invalidateHeader}><button>Invalidate header</button></form>
           <form action={invalidateFooter}><button>Invalidate footer</button></form>
         </Control>
-        <Control title="KV upgrade set" description="The five long-tail products stream by default. Check one to upgrade it: its very next visit fills a permanent cache. Uncheck to send it back to streaming. Every other product stays untouched.">
+        <Control title="Product delivery" description="These five products stream by default. Select one to cache it after its next visit. Select it again to return it to streaming. Other products are untouched.">
           <ul className="upgrade-list">
-            {longTailProducts.map((product) => {
-              const isUpgraded = assignments.get(product.slug) === "upgrade";
+            {deliveryControlProducts.map((product) => {
+              const isCachedOnVisit = deliveries.get(product.slug) === "upgrade";
               return (
                 <li key={product.slug}>
-                  <form action={toggleUpgrade}>
+                  <form action={toggleProductDelivery}>
                     <input type="hidden" name="slug" value={product.slug} />
-                    <input type="hidden" name="upgraded" value={isUpgraded ? "0" : "1"} />
-                    <button className={`upgrade-toggle${isUpgraded ? " is-upgraded" : ""}`}>
-                      <span aria-hidden>{isUpgraded ? "\u2611" : "\u2610"}</span>
+                    <button className={`upgrade-toggle${isCachedOnVisit ? " is-upgraded" : ""}`}>
+                      <span aria-hidden>{isCachedOnVisit ? "\u2611" : "\u2610"}</span>
                       <span>{product.name}</span>
                     </button>
                   </form>
@@ -38,7 +36,7 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
             })}
           </ul>
         </Control>
-        <Control title="Individual product" description="Build and upgrade products own tagged detail caches. Long-tail product detail is never cached.">
+        <Control title="Individual product" description="Build and cached-on-visit products have tagged detail caches. Streaming product detail is never cached.">
           <form action={invalidateProduct} className="product-invalidator">
             <label htmlFor="slug">Product</label>
             <select id="slug" name="slug" defaultValue={products[0].slug}>
@@ -52,11 +50,11 @@ export default async function ControlPage({ searchParams }: PageProps<"/control"
         <h2>Test sequence</h2>
         <ol>
           <li>Open a build product. It was prerendered at build time.</li>
-          <li>Directly open an upgrade product, then reload it. Its delayed detail becomes cacheable after the first request.</li>
-          <li>Open a long-tail product repeatedly. Its detail remains request-time and streams after 1.6 seconds.</li>
+          <li>Directly open a cached-on-visit product, then reload it. Its delayed detail becomes cacheable after the first request.</li>
+          <li>Open a streaming product repeatedly. Its detail remains request-time and streams after 1.6 seconds.</li>
           <li>Invalidate a tag here, then hard reload the relevant route and compare its timestamp.</li>
-          <li>Check a long-tail product in the KV upgrade set, then open it: it becomes permanently cached on its next visit while every other product keeps its original cache timestamp.</li>
-          <li>Inspect <code>/api/products/[slug]</code> for fake product behavior. The upgrade set lives in Vercel KV (Upstash).</li>
+          <li>Select a streaming product, then open it. Its next visit becomes cached while every other product keeps its original cache timestamp.</li>
+          <li>Inspect <code>/api/products/[slug]</code> for fake product behavior. Product delivery settings live in Vercel KV (Upstash).</li>
         </ol>
       </section>
     </main>

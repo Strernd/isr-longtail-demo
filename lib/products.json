@@ -1,0 +1,107 @@
+[
+  {
+    "slug": "orbital-chair",
+    "name": "Orbital Chair",
+    "price": 680,
+    "description": "A sculptural lounge chair with a powder-coated steel frame.",
+    "accent": "coral"
+  },
+  {
+    "slug": "halo-lamp",
+    "name": "Halo Lamp",
+    "price": 240,
+    "description": "A dimmable opal-glass lamp for warm, low-glare light.",
+    "accent": "gold"
+  },
+  {
+    "slug": "grid-shelf",
+    "name": "Grid Shelf",
+    "price": 420,
+    "description": "A modular aluminum shelf built to move with your space.",
+    "accent": "blue"
+  },
+  {
+    "slug": "arch-desk",
+    "name": "Arch Desk",
+    "price": 890,
+    "description": "A compact solid-oak desk with cable management underneath.",
+    "accent": "green"
+  },
+  {
+    "slug": "loft-speaker",
+    "name": "Loft Speaker",
+    "price": 360,
+    "description": "A tactile desktop speaker tuned for focused work.",
+    "accent": "purple"
+  },
+  {
+    "slug": "linen-coasters",
+    "name": "Linen Coasters",
+    "price": 28,
+    "description": "A set of four hand-woven coasters.",
+    "accent": "rose"
+  },
+  {
+    "slug": "mini-vase",
+    "name": "Mini Vase",
+    "price": 44,
+    "description": "A small recycled-glass vase for a single stem.",
+    "accent": "cyan"
+  },
+  {
+    "slug": "copper-hooks",
+    "name": "Copper Hooks",
+    "price": 52,
+    "description": "Three small wall hooks with a living finish.",
+    "accent": "orange"
+  },
+  {
+    "slug": "paper-tray",
+    "name": "Paper Tray",
+    "price": 38,
+    "description": "A powder-coated tray for notes, mail, and receipts.",
+    "accent": "yellow"
+  },
+  {
+    "slug": "wool-mat",
+    "name": "Wool Desk Mat",
+    "price": 72,
+    "description": "A soft felt work surface cut from dense merino wool.",
+    "accent": "slate"
+  },
+  {
+    "slug": "brass-clip",
+    "name": "Brass Paper Clip",
+    "price": 18,
+    "description": "A satisfyingly weighty clip machined from brass.",
+    "accent": "gold"
+  },
+  {
+    "slug": "cork-trivet",
+    "name": "Cork Trivet",
+    "price": 32,
+    "description": "A heat-proof cork rest for the centre of the table.",
+    "accent": "orange"
+  },
+  {
+    "slug": "glass-cup",
+    "name": "Ripple Glass Cup",
+    "price": 26,
+    "description": "A hand-blown daily glass with a gently rippled profile.",
+    "accent": "cyan"
+  },
+  {
+    "slug": "ink-pad",
+    "name": "Indigo Ink Pad",
+    "price": 24,
+    "description": "A small archival ink pad for stamps and labels.",
+    "accent": "blue"
+  },
+  {
+    "slug": "walnut-block",
+    "name": "Walnut Monitor Block",
+    "price": 96,
+    "description": "A low riser carved from a single piece of walnut.",
+    "accent": "green"
+  }
+]
